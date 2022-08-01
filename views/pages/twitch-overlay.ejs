@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Twitch Overlay</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+        * {
+            margin:0;
+            padding:0;
+        }
+
+        body {
+            background-color:black;
+        }
+
+        :root{
+            --dark-color: rgb(25, 25, 25);
+        }
+
+        #spotify-embed {
+            width:350px;
+            height:100px;
+
+            /* margin-top:5px;
+            margin-left:5px; */
+
+            border:solid 2px #fafafa;
+            border-radius:10px;
+
+            background-color:var(--dark-color);
+
+            font-family: 'Roboto', sans-serif;
+
+            padding:5px;
+        }
+
+        #album-cover {
+            z-index:11;
+            display: block;
+            width:86px;
+            height:86px;
+            border-radius:10px;
+            
+            margin-top:7px;
+            margin-left:7px;
+            /* position:fixed; */
+            /* border:solid 2px #fafafa; */
+            float:left;
+        }
+
+        #song-title {
+            color:#fafafa;
+            font-size: 25px;
+
+            width:fit-content;
+            text-align:left;
+            white-space:nowrap;
+        }
+
+        #song-artist {
+            color:#aeaeae;
+            font-size: 18px;
+            margin-top: 5px;
+            width:fit-content;
+
+            white-space:nowrap;
+        }
+
+        #outer-container {
+            text-align:left;
+            margin-left:110px;
+            margin-top:20px;
+        }
+
+        #outer-container-2 {
+            text-align:left;
+            margin-left:110px;
+        }
+
+        .outer {
+            overflow:hidden;
+        }
+
+        .inner {
+            position:relative;
+            left:0;
+        }
+    </style>
+</head>
+<body>
+    <div id="spotify-embed">
+        <img id="album-cover" src=<%= album_cover %> alt='album cover here'>
+        <div id='outer-container' class="outer"><div id="song-title" class="inner"><%= song_title %></div></div>
+        <div id='outer-container-2' class="outer"><div id="song-artist" class="inner"><%= song_artist %></div></div>
+    </div>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js'></script>
+    <script>
+        const container = $("#outer-container");
+        const container2 = $("#outer-container-2");
+        let lastPosition;
+        let lastPosition2;
+        let left = false;
+        let left2 = false;
+        $(document).ready(function () {
+
+            // Check the song status every 5 seconds
+            setInterval( () => {
+                $.ajax({
+                    url: "/twitch-overlay/info"
+                })
+                .done(function( data ) {
+                    if ($('#song-title').text() !== data.song_title || $('#song-artist').text() !== data.song_artist){
+                        container.scrollLeft(0);
+                        container2.scrollLeft(0);
+                        $('#song-title').text(data.song_title);
+                        $('#song-artist').text(data.song_artist);
+                        $('#album-cover').attr('src',data.album_cover);
+                    }
+                });
+            }, 5000)
+
+            setInterval(() => {
+                // for song title
+                let position = container.scrollLeft();
+                if(position === lastPosition){
+                    left = !left
+                }
+
+                lastPosition = position;
+
+                if (left) {
+                    // Going left
+                    container.scrollLeft(position - 1); 
+                } else if (!left && $('#song-title').width() > $('#outer-container').width() * 1.1){
+                    // Going right
+                    container.scrollLeft(position + 1); 
+                } 
+
+                // for song artists
+                let position2 = container2.scrollLeft();
+                if(position2 === lastPosition2){
+                    left2 = !left2
+                }
+
+                lastPosition2 = position2;
+
+                if (left2) {
+                    // Going left
+                    container2.scrollLeft(position2 - 1); 
+                } else if (!left2 && $('#song-artist').width() > $('#outer-container-2').width() * 1.1 && $('#song-title').width() <= $('#outer-container').width() * 1.1){
+                    // Going right
+                    container2.scrollLeft(position2 + 1); 
+                }
+
+            }, 80);
+        });
+    </script>
+</body>
+</html>
